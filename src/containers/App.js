@@ -1,62 +1,60 @@
-import React from "react";
+import React, { useState, useEffect} from "react";
 import CardList from "../components/CardList";
 import SearchBox from "../components/SearchBox";
 import './App.css';
 import Scroll from "../components/Scroll";
 import ErrorBoundry from "../components/ErrorBoundry";
 
-// Para que el componente tenga un estado (lo que cambia en la aplicacion) debe ser una clase
-class App extends React.Component {
-    // El constructor es una de las clases del lifecycle de los componentes de react. Es la primera que se llama al crear el componente
-    // Los campos que varian en un componente se tienen que declarar dentro de la variable state que se declara en el constructor
-    constructor(){
-        super();
-        // Estos son los campos que van a variar en los hijos
-        this.state = {
-            robots: [],
-            searchField: '',
-        };
-    }
+// A partir de los hooks se puede poner estados a funciones
+function App() {
+    const [robots, setRobots] = useState([]);
+    const [searchField, setSearchField] = useState('');
+    const [count, setCount] = useState(0);
 
-    // Otra clase del lifecycle de react que se llama al crear el componente luego del primer render es:
-    // componentDidMount. que te dice que se monto la pagina y ya se mostro algo/
-    componentDidMount(){
-        fetch('https://jsonplaceholder.typicode.com/users')
-            .then(response => response.json())
-            .then(users => this.setState({robots: users}));
-        
-    }
+    useEffect(
+        () => {
+            fetch('https://jsonplaceholder.typicode.com/users')
+            //fetch('https://jsonplaceholder.cypress.io/todos')
+                .then(response => {
+                    console.log(response);
+                    return response.json();
+                })
+                .then(users => {
+                    console.log(users);
+                    setRobots(users)
+                });
+            console.log(count, robots, searchField);
 
-    // Para que el hijo, en este caso el search box, pueda actualizar los robots mostrados tiene que actualizar el estado del padre.
-    // Para hacerlo se le pasa como parametro una funcion que el hijo llamara cuando modifique la variable que tenemos que analizar
-    // Ppor eso defino en App(el padre) la funcion que utulizara el hijo cuando cambie el input text.
-//    onSearchChange(event){ Especificado de esta forma es como que la funcion corre en el SearchBox. y por eso no identifica el this.state
-    // Tendo que usar el arrow function ya que la funcion no es parte de react
-    onSearchChange = (event) => { // especificada asi la funcion si corre en App y ve el state.
-        // para decirle a react que algo del estado se actualizo utilizo this.setState
-        this.setState({searchField: event.target.value});
+        },
+        // el use effect lo llama siempre que un estdo varia porque lo usa en el ciclo de vida como si fuera el render (cuando se crea o cambia un estado)
+        // Esto genera que si no pase nada se este ejecutando en loop. 
+        // Para evitar eso hay un segundo parametro que le dice que se ejecute cuando cambia alguno de los parametros mostrados en la lista.
+        // Para que se ejecute como si fuera componentDidMount hay que poner una lista vacia.
+        //[] // es igual a decir que solo lo corra una vez cuando se monto el componente componentDidMount.
+        [count] // Solo corre esto cuando cambia count.
+    );
+
+    const onSearchChange = (event) => { // especificada asi la funcion si corre en App y ve el state.
+        setSearchField(event.target.value);
         console.log(event.target.value);
     }
 
-    render() {
-        const {robots , searchField} = this.state;
-        const filteredRobots = robots.filter(robot => {
-            return robot.name.toLowerCase().includes(searchField.toLowerCase());
-        });
-        return !robots.lenght
-            ? <h1>Loading...</h1>
-            : (
-                <div className="tc">
-                    <h1 className="f1">Robo Friends</h1>
-                    <SearchBox searchChange={this.onSearchChange}/>
-                    <Scroll>
-                        <ErrorBoundry>
-                            <CardList robots={filteredRobots}/>
-                        </ErrorBoundry>
-                    </Scroll>
-                </div>
-            );
-    }
+    const filteredRobots = robots.filter(robot => {
+        return robot.name.toLowerCase().includes(searchField.toLowerCase());
+    });
+
+    return (
+            <div className="tc">
+                <h1 className="f1">Robo Friends</h1>
+                <button onClick={() => setCount(count+1)}>Click Me!</button>
+                <SearchBox searchChange={onSearchChange}/>
+                <Scroll>
+                    <ErrorBoundry>
+                        <CardList robots={filteredRobots}/>
+                    </ErrorBoundry>
+                </Scroll>
+            </div>
+        );
 }
 
 export default App;
